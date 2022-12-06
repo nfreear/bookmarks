@@ -1,0 +1,10 @@
+{
+  "name": "@nfreear/bookmarks",
+  "type": "module",
+  "scripts": {
+    "read-write": "node bin/read-write.mjs"
+  },
+  "devDependencies": {
+    "@octokit/rest": "^19.0.5"
+  }
+}
