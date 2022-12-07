@@ -5,13 +5,20 @@
  */
 
 import { Octokit } from '@octokit/rest';
+import * as dotenv from 'dotenv';
 import { promises as fs } from 'fs';
 
-const auth = null;
-const userAgent = 'ndf/bookmarks 0.9';
-const username = 'nick-test-14';
-const per_page = 5;
-const FILE_NAME = './docs/bookmarks.json';
+dotenv.config();
+
+const { GH_AUTH, GH_USERNAME, PER_PAGE, BOOKMARK_FILE } = process.env;
+
+const auth = GH_AUTH || null;
+const userAgent = 'nfreear/bookmarks 0.9';
+const username = GH_USERNAME || 'nick-test-14';
+const per_page = PER_PAGE || 5;
+const FILE_NAME = BOOKMARK_FILE || './docs/bookmarks.json';
+
+console.debug('PER_PAGE:', PER_PAGE);
 
 const octokit = new Octokit({ auth, userAgent });
 
@@ -42,7 +49,7 @@ const items = await Promise.all(allItems);
 const date = new Date().toISOString();
 
 fs.writeFile(FILE_NAME, JSON.stringify({ date, items }, null, 2), 'utf8')
-  .then(() => console.log('JSON saved:', items.length))
+  .then(() => console.log('Bookmark JSON saved:', items.length, FILE_NAME))
   .catch(err => console.error('ERROR:', err));
 
 // console.debug('Gist list:', remaining, reset, GISTS.data[0]);
