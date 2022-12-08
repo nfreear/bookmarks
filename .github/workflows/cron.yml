@@ -1,5 +1,5 @@
-# Simple workflow for deploying static content to GitHub Pages
-name: Build Bookmarks
+# Workflow for building and deploying a static JSON file to GitHub Pages.
+name: Build Bookmarks 🕚
 
 on:
   schedule:
@@ -9,6 +9,10 @@ on:
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+
+env:
+  PER_PAGE: 25
+  FEED_LINK: "https://pinboard.in/u:ndf/public/"
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
@@ -24,8 +28,8 @@ concurrency:
 jobs:
   # Single deploy job since we're just deploying
   deploy:
-    env:
-      PER_PAGE: 20
+    # env:
+    #  PER_PAGE: 20
 
     environment:
       name: github-pages
@@ -45,13 +49,14 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
       - run: npm ci
+      # >> Build bookmarks JSON.
       - run: npm run read-write
       - name: Setup Pages
         uses: actions/configure-pages@v2
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
-          # Upload entire repository
+          # Upload one directory.
           path: './docs'
       - name: Deploy to GitHub Pages
         id: deployment

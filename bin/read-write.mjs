@@ -1,7 +1,7 @@
 /**
  * Fetch Gists, parse and write a bookmarks JSON file.
  *
- * @copyright NDF, 06-Dec-2022.
+ * @copyright © Nick Freear, 06-Dec-2022.
  */
 
 import { Octokit } from '@octokit/rest';
@@ -10,47 +10,64 @@ import { promises as fs } from 'fs';
 
 dotenv.config();
 
-const { GH_AUTH, GH_USERNAME, PER_PAGE, BOOKMARK_FILE } = process.env;
+const {
+  GH_AUTH, GH_USERNAME, PER_PAGE, BOOKMARK_FILE, FEED_TITLE, FEED_LINK
+} = process.env;
 
 const auth = GH_AUTH || null;
 const userAgent = 'nfreear/bookmarks 0.9';
 const username = GH_USERNAME || 'nick-test-14';
-const per_page = PER_PAGE || 5;
+const per_page = parseInt(PER_PAGE) || 5;
 const FILE_NAME = BOOKMARK_FILE || './docs/bookmarks.json';
+
+const title = FEED_TITLE || 'My Bookmarks';
+const link = FEED_LINK || null;
 
 console.debug('PER_PAGE:', PER_PAGE);
 
-const octokit = new Octokit({ auth, userAgent });
+(async () => {
+  const ITEMS = await fetchGists();
 
-const GISTS = await octokit.rest.gists.listForUser({ username, per_page });
+  writeBookmarksJson(ITEMS);
+})();
 
-// const remaining = parseInt(gists.headers['x-ratelimit-remaining']);
-// const reset = new Date(parseInt(gists.headers['x-ratelimit-reset'])).toISOString();
+async function fetchGists () {
+  const octokit = new Octokit({ auth, userAgent });
 
-const allItems = await GISTS.data.map(async ({ id, description }) => {
-  const { data, headers } = await octokit.rest.gists.get({ gist_id: id });
+  const GISTS = await octokit.rest.gists.listForUser({ username, per_page });
 
-  const remaining = parseInt(headers['x-ratelimit-remaining']);
-  const reset = ''; // new Date(parseInt(headers['x-ratelimit-reset'])).toISOString();
-  const bookmarkJson = data.files['my-bookmark.test.json'];
-  const { content, language, size } = bookmarkJson;
-  const bookmark = JSON.parse(content);
+  // const remaining = parseInt(gists.headers['x-ratelimit-remaining']);
+  // const reset = new Date(parseInt(gists.headers['x-ratelimit-reset'])).toISOString();
 
-  console.debug('Gist:', remaining, reset, description, id);
-  // console.debug('>>', data);
-  // console.debug('>>', language, bookmark);
+  const allItems = await GISTS.data.map(async ({ id, description }) => {
+    const { data, headers } = await octokit.rest.gists.get({ gist_id: id });
 
-  await delay();
+    const remaining = parseInt(headers['x-ratelimit-remaining']);
+    const reset = ''; // new Date(parseInt(headers['x-ratelimit-reset'])).toISOString();
+    const bookmarkJson = data.files['my-bookmark.test.json'];
+    const { content, language, size } = bookmarkJson;
+    const bookmark = JSON.parse(content);
 
-  return bookmark;
-});
+    console.debug('Gist:', remaining, language, size, reset, description, id);
+    // console.debug('>>', data);
+    // console.debug('>>', language, bookmark);
 
-const items = await Promise.all(allItems);
-const date = new Date().toISOString();
+    await delay();
 
-fs.writeFile(FILE_NAME, JSON.stringify({ date, items }, null, 2), 'utf8')
-  .then(() => console.log('Bookmark JSON saved:', items.length, FILE_NAME))
-  .catch(err => console.error('ERROR:', err));
+    return bookmark;
+  });
+
+  return await Promise.all(allItems);
+}
+
+function writeBookmarksJson (items) {
+  const time = new Date().toISOString();
+  const feed = { title, link, time };
+
+  fs.writeFile(FILE_NAME, JSON.stringify({ feed, items }, null, 2), 'utf8')
+    .then(() => console.log('Bookmark JSON saved:', items.length, FILE_NAME))
+    .catch(err => console.error('ERROR:', err));
+}
 
 // console.debug('Gist list:', remaining, reset, GISTS.data[0]);
 
