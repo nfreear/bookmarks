@@ -1,7 +1,8 @@
 /**
- * Fetch Gists, parse and write a bookmarks JSON file.
+ * Fetch, read and parse Gists, and write a JSON bookmarks file.
  *
  * @copyright © Nick Freear, 06-Dec-2022.
+ * @see https://octokit.github.io/rest.js/v19#gists-list-for-user
  */
 
 import { Octokit } from '@octokit/rest';
@@ -17,7 +18,7 @@ const {
 const auth = GH_AUTH || null;
 const userAgent = 'nfreear/bookmarks 0.9';
 const username = GH_USERNAME || 'nick-test-14';
-const per_page = parseInt(PER_PAGE) || 5;
+const per_page = parseInt(PER_PAGE) || 5; /* eslint-disable-line camelcase */
 const FILE_NAME = BOOKMARK_FILE || './docs/bookmarks.json';
 
 const title = FEED_TITLE || 'My Bookmarks';
@@ -54,7 +55,7 @@ async function fetchGists () {
 
     await delay();
 
-    return bookmark;
+    return { ...bookmark, id };
   });
 
   return await Promise.all(allItems);
@@ -62,7 +63,7 @@ async function fetchGists () {
 
 function writeBookmarksJson (items) {
   const time = new Date().toISOString();
-  const feed = { title, link, time };
+  const feed = { title, link, time, per_page };
 
   fs.writeFile(FILE_NAME, JSON.stringify({ feed, items }, null, 2), 'utf8')
     .then(() => console.log('Bookmark JSON saved:', items.length, FILE_NAME))
