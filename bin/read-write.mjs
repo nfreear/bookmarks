@@ -1,8 +1,9 @@
 /**
- * Fetch, read and parse Gists, and write a JSON bookmarks file.
+ * Fetch, read and parse Gists, and write the bookmarks as a JSON Feed file.
  *
  * @copyright © Nick Freear, 06-Dec-2022.
  * @see https://octokit.github.io/rest.js/v19#gists-list-for-user
+ * @see https://www.jsonfeed.org/version/1.1/
  */
 
 import { Octokit } from '@octokit/rest';
@@ -12,24 +13,24 @@ import { promises as fs } from 'fs';
 dotenv.config();
 
 const {
-  GH_AUTH, GH_USERNAME, PER_PAGE, BOOKMARK_FILE, FEED_TITLE, FEED_LINK
+  GH_AUTH, GH_USERNAME, PER_PAGE, FEED_FILE, FEED_TITLE, FEED_LINK
 } = process.env;
 
 const auth = GH_AUTH || null;
 const userAgent = 'nfreear/bookmarks 0.9';
 const username = GH_USERNAME || 'nick-test-14';
 const per_page = parseInt(PER_PAGE) || 5; /* eslint-disable-line camelcase */
-const FILE_NAME = BOOKMARK_FILE || './docs/bookmarks.json';
+const FILE_NAME = FEED_FILE || './docs/bookmarks.json';
 
 const title = FEED_TITLE || 'My Bookmarks';
-const link = FEED_LINK || null;
+const home_page_url = FEED_LINK || null; /* eslint-disable-line camelcase */
 
 console.debug('PER_PAGE:', PER_PAGE);
 
 (async () => {
   const ITEMS = await fetchGists();
 
-  writeBookmarksJson(ITEMS);
+  writeBookmarksFeedJson(ITEMS);
 })();
 
 async function fetchGists () {
@@ -55,17 +56,25 @@ async function fetchGists () {
 
     await delay();
 
-    return { ...bookmark, id };
+    const { title, text, tags, time, url } = bookmark;
+    const isPrivate = bookmark.private;
+
+    return {
+      title, url, content_text: text, tags, date_published: time, private: isPrivate, id
+    };
   });
 
   return await Promise.all(allItems);
 }
 
-function writeBookmarksJson (items) {
-  const time = new Date().toISOString();
-  const feed = { title, link, time, per_page };
+function writeBookmarksFeedJson (items) {
+  const version = 'https://jsonfeed.org/version/1.1';
+  const language = 'en';
+  const _time = new Date().toISOString();
+  const _per_page = per_page; /* eslint-disable-line camelcase */
+  const feed = { version, title, language, home_page_url, _time, _per_page };
 
-  fs.writeFile(FILE_NAME, JSON.stringify({ feed, items }, null, 2), 'utf8')
+  fs.writeFile(FILE_NAME, JSON.stringify({ ...feed, items }, null, 2), 'utf8')
     .then(() => console.log('Bookmark JSON saved:', items.length, FILE_NAME))
     .catch(err => console.error('ERROR:', err));
 }

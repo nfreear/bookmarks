@@ -1,8 +1,8 @@
 {
   "private": true,
   "name": "@nfreear/bookmarks",
+  "description": "Build a bookmarks JSON Feed on a schedule | © 2022 Nick Freear.",
   "repository": "https://github.com/nfreear/bookmarks.git",
-  "x-copyright": "© 2022 Nick Freear.",
   "type": "module",
   "scripts": {
     "read-write": "node bin/read-write.mjs",

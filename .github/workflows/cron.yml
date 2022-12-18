@@ -12,6 +12,7 @@ on:
 
 env:
   PER_PAGE: 25
+  FEED_FILE: "./docs/feed.json"
   FEED_LINK: "https://pinboard.in/u:ndf/public/"
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
