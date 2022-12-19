@@ -12,28 +12,39 @@ import { promises as fs } from 'fs';
 
 dotenv.config();
 
-const {
-  GH_AUTH, GH_USERNAME, PER_PAGE, FEED_FILE, FEED_TITLE, FEED_LINK
-} = process.env;
-
-const auth = GH_AUTH || null;
-const userAgent = 'nfreear/bookmarks 0.9';
-const username = GH_USERNAME || 'nick-test-14';
-const per_page = parseInt(PER_PAGE) || 5; /* eslint-disable-line camelcase */
-const FILE_NAME = FEED_FILE || './docs/bookmarks.json';
-
-const title = FEED_TITLE || 'My Bookmarks';
-const home_page_url = FEED_LINK || null; /* eslint-disable-line camelcase */
-
-console.debug('PER_PAGE:', PER_PAGE);
-
 (async () => {
   const ITEMS = await fetchGists();
 
   writeBookmarksFeedJson(ITEMS);
 })();
 
+function getConfig (ENV = process.env) {
+  const {
+    GH_AUTH, GH_USERNAME, PER_PAGE, FEED_FILE, FEED_TITLE, FEED_LINK, FEED_AUTHOR, FEED_LOCALE
+  } = ENV;
+
+  const auth = GH_AUTH || null;
+  const userAgent = 'nfreear/bookmarks 0.9';
+  const username = GH_USERNAME || 'nick-test-14';
+  const per_page = parseInt(PER_PAGE) || 5; /* eslint-disable-line camelcase */
+  const FILE_NAME = FEED_FILE || './docs/bookmarks.json';
+
+  const title = FEED_TITLE || 'My Bookmarks';
+  const home_page_url = FEED_LINK || null; /* eslint-disable-line camelcase */
+  const authors = [{ name: FEED_AUTHOR || 'Nick Freear' }];
+  const language = FEED_LOCALE || 'en';
+  const version = 'https://jsonfeed.org/version/1.1';
+
+  console.debug('PER_PAGE:', PER_PAGE);
+
+  return {
+    auth, userAgent, username, per_page, FILE_NAME, title, home_page_url, authors, language, version
+  };
+}
+
 async function fetchGists () {
+  const { auth, userAgent, username, per_page } = getConfig(); /* eslint-disable-line camelcase */
+
   const octokit = new Octokit({ auth, userAgent });
 
   const GISTS = await octokit.rest.gists.listForUser({ username, per_page });
@@ -57,10 +68,10 @@ async function fetchGists () {
     await delay();
 
     const { title, text, tags, time, url } = bookmark;
-    const isPrivate = bookmark.private;
+    const _private = bookmark.private;
 
     return {
-      title, url, content_text: text, tags, date_published: time, private: isPrivate, id
+      title, url, content_text: text, tags, date_published: time, _private, id
     };
   });
 
@@ -68,11 +79,10 @@ async function fetchGists () {
 }
 
 function writeBookmarksFeedJson (items) {
-  const version = 'https://jsonfeed.org/version/1.1';
-  const language = 'en';
+  const { FILE_NAME, title, home_page_url, per_page, authors, language, version } = getConfig(); /* eslint-disable-line camelcase */
   const _time = new Date().toISOString();
   const _per_page = per_page; /* eslint-disable-line camelcase */
-  const feed = { version, title, language, home_page_url, _time, _per_page };
+  const feed = { version, title, authors, language, home_page_url, _time, _per_page };
 
   fs.writeFile(FILE_NAME, JSON.stringify({ ...feed, items }, null, 2), 'utf8')
     .then(() => console.log('Bookmark JSON saved:', items.length, FILE_NAME))
